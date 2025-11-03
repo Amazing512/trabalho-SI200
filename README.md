@@ -11,7 +11,7 @@ Sistema para organizar e gerenciar tarefas pessoais, com opções de cadastro, a
 Auxiliar na organização de tarefas diárias, oferecendo um sistema de controle de prazos e lembretes.
 
 ### To Do List:
-- [ ] Criar menu de seleção de ação
+- [x] Criar menu de seleção de ação
 - [ ] Cadastrar e salvar em um arquivo novas tarefas  
 - [ ] Excluir uma tarefa
 - [ ] Modificar estado de uma tarefa (concluida, não concluida)
