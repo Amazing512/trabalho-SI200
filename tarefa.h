@@ -1,5 +1,15 @@
 #ifndef TAREFAS_H
 #define TAREFAS_H
+#include <stdio.h>
+
+typedef struct tarefa {
+  int id;
+  char status; // 'F' para feito, 'P' para pendente
+  char description[100];
+  int expirationDay;
+  int expirationMonth;
+  int expirationYear;
+} Tarefa;
 
 void renderMenu(FILE *fp);
 

@@ -16,8 +16,8 @@ Auxiliar na organização de tarefas diárias, oferecendo um sistema de controle
 - [ ] Excluir uma tarefa
 - [ ] Modificar estado de uma tarefa (concluida, não concluida)
 - [ ] Atualizar uma tarefa (descrição, prazo)
-- [ ] Listar todas as tarefas 
-- [ ] Listar tarefas da semana
+- [X] Listar todas as tarefas 
+- [X] Listar tarefas não concluídas
 
 ### Outras informações importantes:
 **Estrutura da tarefa:**

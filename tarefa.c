@@ -1,31 +1,146 @@
 #include <stdio.h>
+#include<stdlib.h>
+#include <string.h>
 #include "tarefa.h"
+
+#define separator "----------------------------------"
+
+int getTaskCount(FILE *fp) {
+    fseek(fp, 0, SEEK_SET);
+
+    int count = 0;
+
+    Tarefa tarefa;
+    while(fread(&tarefa, sizeof(Tarefa), 1, fp)) {
+        count++;
+    }
+
+    return count;
+}
+
+void registerNewTask(FILE *fp) {
+    Tarefa novaTarefa;
+
+    novaTarefa.id = getTaskCount(fp) + 1;
+    novaTarefa.status = 'P';  // Pendente por padrão
+
+    printf("Digite a descrição da nova tarefa: ");
+    fgets(novaTarefa.description, sizeof(novaTarefa.description), stdin);
+
+    size_t len = strlen(novaTarefa.description);
+    if (len > 0 && novaTarefa.description[len - 1] == '\n') {
+        novaTarefa.description[len - 1] = '\0'; // Troca o \n se existir por um \0
+    }
+
+    printf("Digite a data de vencimento (dd mm aaaa): ");
+    scanf("%d %d %d", &novaTarefa.expirationDay, &novaTarefa.expirationMonth, &novaTarefa.expirationYear);
+
+    fseek(fp, 0, SEEK_END);
+    fwrite(&novaTarefa, sizeof(Tarefa), 1, fp);
+
+    fflush(fp);
+}
+
+void listAllActions(FILE *fp) {
+    fseek(fp, 0, SEEK_SET);
+
+    int tasksRead = 0;
+    Tarefa tarefa[10];
+    while((tasksRead = fread(&tarefa, sizeof(Tarefa), 10, fp)) != 0) {
+        for(int i = 0; i < tasksRead; i++) {
+            if(i != 0) {
+                printf("%s\n", separator);
+            }
+            printf("Tarefa %d: %s\n", tarefa[i].id, tarefa[i].description);
+            switch(tarefa[i].status) {
+                case 'P':
+                    printf("Status: Pendente\n");
+                    break;
+                case 'F':
+                    printf("Status: Feito\n");
+                    break;
+                default:
+                    printf("Status: Desconhecido\n");
+                    break;
+            }
+            printf("Data de Vencimento: %02d/%02d/%04d\n",
+                   tarefa[i].expirationDay,
+                   tarefa[i].expirationMonth,
+                   tarefa[i].expirationYear);
+            
+        }
+    }
+    system("pause");
+}
+
+void listNotDoneActions(FILE *fp) {
+    fseek(fp, 0, SEEK_SET);
+
+    int tasksRead = 0;
+    Tarefa tarefa[10];
+    while((tasksRead = fread(&tarefa, sizeof(Tarefa), 10, fp)) != 0) {
+        printf("Tarefas lidas: %d\n", tasksRead);
+        for(int i = 0; i < tasksRead; i++) {
+            if(tarefa[i].status == 'F') {
+                continue;
+            }
+
+            if(i != 0) {
+                printf("%s\n", separator);
+            }
+
+            printf("Tarefa %d: %s\n", tarefa[i].id, tarefa[i].description);
+             switch(tarefa[i].status) {
+                case 'P':
+                    printf("Status: Pendente\n");
+                    break;
+                case 'F':
+                    printf("Status: Feito\n");
+                    break;
+                default:
+                    printf("Status: Desconhecido\n");
+                    break;
+            }
+            printf("Data de Vencimento: %02d/%02d/%04d\n",
+                   tarefa[i].expirationDay,
+                   tarefa[i].expirationMonth,
+                   tarefa[i].expirationYear);
+            
+        }
+    }
+    system("pause");
+}
+
+
 
 void renderMenu(FILE *fp) {
     char taskCountText[30];
-    sprintf(taskCountText, "Existem %d tarefas.", 4);
+    sprintf(taskCountText, "Existem %d tarefas.", getTaskCount(fp));
 
-    printf("----------------------------------\n");
+    printf("%s\n", separator);
     printf("- %-30s -\n", taskCountText);
     printf("- %-30s -\n", "Escolha uma ação:");
     printf("- %-30s -\n", "");
-    printf("- %-30s -\n", "1) Listar tarefas da semana");
-    printf("- %-30s -\n", "2) Listar todas as tarefas");
+    printf("- %-30s -\n", "1) Listar todas as tarefas");
+    printf("- %-30s -\n", "2) Listar tarefas não feitas");
     printf("- %-30s -\n", "3) Cadastrar tarefa");
     printf("- %-30s -\n", "4) Alterar status da tarefa");
     printf("- %-30s -\n", "5) Modificar tarefa");
     printf("- %-30s -\n", "6) Excluir tarefa");
     printf("- %-30s -\n", "0) Sair");
-    printf("----------------------------------\n");
+    printf("%s\n", separator);
 }
 
 int processAction(char action, FILE *fp) {
     switch(action) {
         case '1': 
+            listAllActions(fp);
             break;
         case '2': 
+            listNotDoneActions(fp);
             break;
         case '3': 
+            registerNewTask(fp);
             break;
         case '4': 
             break;
@@ -39,6 +154,8 @@ int processAction(char action, FILE *fp) {
             printf("Ação selecionada inválida.\n");
             break;
     }
+
+    return 0;
 }
 
 void registerTask(FILE *fp) {

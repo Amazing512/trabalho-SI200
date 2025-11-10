@@ -12,7 +12,7 @@ int main() {
 
     // printf("Açãm é pra lar ->");
 
-    FILE *fp = fopen("tarefas.txt", "a+");
+    FILE *fp = fopen("tarefas.bin", "a+b");
 
     if(fp == NULL) {
         printf("Erro ao abrir arquivo.\n");
@@ -20,9 +20,12 @@ int main() {
     }
 
     while(1) {
-        renderMenu();
+        fflush(stdin);
+
+        renderMenu(fp);
 
         char action = getchar();
+        getchar();  // Limpar o buffer
 
         if(processAction(action, fp) == -1) {
             break;
@@ -30,7 +33,7 @@ int main() {
     }
 
 
-    system("pause");
+    
     fclose(fp);
     return 0;
 }
