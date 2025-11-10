@@ -147,6 +147,7 @@ int processAction(char action, FILE *fp) {
         case '5': 
             break;
         case '6': 
+            removeTask(fp);
             break;        
         case '0': 
             return -1;
@@ -158,13 +159,54 @@ int processAction(char action, FILE *fp) {
     return 0;
 }
 
-void registerTask(FILE *fp) {
-
-}
-
 void removeTask(FILE *fp) {
+    int idRemover;
+    int encontrada = 0;
+    Tarefa tarefa;
 
+    FILE *temp;
+
+    // pede o ID
+    printf("Digite o ID da tarefa que deseja excluir: ");
+    scanf("%d", &idRemover);
+    getchar(); // limpa o buffer
+
+    // abre os arquivos
+    fp = fopen("tarefas.bin", "rb");
+    if (!fp) {
+        printf("Erro: não foi possível abrir o arquivo de tarefas.\n");
+        return;
+    }
+
+    temp = fopen("temp.bin", "wb");
+    if (!temp) {
+        printf("Erro: não foi possível criar arquivo temporário.\n");
+        fclose(fp);
+        return;
+    }
+
+    // lê cada tarefa e copia apenas as que não têm o ID a ser removido
+    while (fread(&tarefa, sizeof(Tarefa), 1, fp)) {
+        if (tarefa.id != idRemover) {
+            fwrite(&tarefa, sizeof(Tarefa), 1, temp);
+        } else {
+            encontrada = 1;
+        }
+    }
+
+    fclose(fp);
+    fclose(temp);
+
+    // substitui o arquivo original pelo novo
+    remove("tarefas.bin");
+    rename("temp.bin", "tarefas.bin");
+
+    if (encontrada)
+        printf("Tarefa %d removida com sucesso!\n", idRemover);
+    else
+        printf("Tarefa não encontrada.\n");
 }
+
 
 void modifyTask(FILE *fp) {
 

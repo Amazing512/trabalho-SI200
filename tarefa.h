@@ -15,7 +15,7 @@ void renderMenu(FILE *fp);
 
 int processAction(char action, FILE *fp);
 
-void registerTask(FILE *fp);
+void registerNewTask(FILE *fp);
 
 void removeTask(FILE *fp);
 
