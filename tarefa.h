@@ -15,14 +15,16 @@ void renderMenu(FILE *fp);
 
 int processAction(char action, FILE *fp);
 
+void listAllActions(FILE *fp);
+
+void listNotDoneActions(FILE *fp);
+
 void registerNewTask(FILE *fp);
 
 void removeTask(FILE *fp);
 
-void modifyTask(FILE *fp);
+void modifyTaskState(FILE *fp);
 
-void listTasks(FILE *fp);
-
-void listWeeklyTasks(FILE *fp);
+void updateTask(FILE *fp);
 
 #endif

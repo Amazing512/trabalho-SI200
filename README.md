@@ -13,7 +13,7 @@ Auxiliar na organização de tarefas diárias, oferecendo um sistema de controle
 ### To Do List:
 - [x] Criar menu de seleção de ação
 - [ ] Cadastrar e salvar em um arquivo novas tarefas  
-- [ ] Excluir uma tarefa
+- [x] Excluir uma tarefa
 - [ ] Modificar estado de uma tarefa (concluida, não concluida)
 - [ ] Atualizar uma tarefa (descrição, prazo)
 - [X] Listar todas as tarefas 
