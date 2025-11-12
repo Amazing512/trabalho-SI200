@@ -5,21 +5,41 @@
 
 #define separator "----------------------------------"
 
+void limparBuffer() {
+    int c;
+    while ((c = getchar()) != '\n' && c != EOF);
+}
+
+
 int getTaskCount(FILE *fp) {
+    if (fp == NULL) {
+        printf("Erro: arquivo não foi aberto corretamente.\n");
+        return 0;
+    }
+
     fseek(fp, 0, SEEK_SET);
 
     int count = 0;
-
     Tarefa tarefa;
-    while(fread(&tarefa, sizeof(Tarefa), 1, fp)) {
+
+    while (fread(&tarefa, sizeof(Tarefa), 1, fp) == 1) {
         count++;
     }
+
+    fseek(fp, 0, SEEK_SET); // reposiciona o ponteiro
 
     return count;
 }
 
+
 void registerNewTask(FILE *fp) {
+    if (fp == NULL) {
+        printf("Erro: arquivo não foi aberto corretamente.\n");
+        return;
+    }
+
     Tarefa novaTarefa;
+    char buffer[50]; // buffer temporário para leitura da data
 
     novaTarefa.id = getTaskCount(fp) + 1;
     novaTarefa.status = 'P';  // Pendente por padrão
@@ -27,32 +47,48 @@ void registerNewTask(FILE *fp) {
     printf("Digite a descrição da nova tarefa: ");
     fgets(novaTarefa.description, sizeof(novaTarefa.description), stdin);
 
+    // remove o \n final da descrição, se existir
     size_t len = strlen(novaTarefa.description);
     if (len > 0 && novaTarefa.description[len - 1] == '\n') {
-        novaTarefa.description[len - 1] = '\0'; // Troca o \n se existir por um \0
+        novaTarefa.description[len - 1] = '\0';
     }
 
     printf("Digite a data de vencimento (dd mm aaaa): ");
-    scanf("%d %d %d", &novaTarefa.expirationDay, &novaTarefa.expirationMonth, &novaTarefa.expirationYear);
+    fgets(buffer, sizeof(buffer), stdin);  // lê a linha completa da data
+    sscanf(buffer, "%d %d %d", &novaTarefa.expirationDay,
+                              &novaTarefa.expirationMonth,
+                              &novaTarefa.expirationYear);
 
+    // grava no arquivo
     fseek(fp, 0, SEEK_END);
     fwrite(&novaTarefa, sizeof(Tarefa), 1, fp);
-
     fflush(fp);
+
+    printf("\nTarefa cadastrada com sucesso!\n");
+    printf("%s\n", separator);
 }
 
 void listAllActions(FILE *fp) {
+    if (fp == NULL) {
+        printf("Erro: arquivo não foi aberto corretamente.\n");
+        return;
+    }
+
     fseek(fp, 0, SEEK_SET);
 
     int tasksRead = 0;
+    int totalExibidas = 0;
     Tarefa tarefa[10];
-    while((tasksRead = fread(&tarefa, sizeof(Tarefa), 10, fp)) != 0) {
-        for(int i = 0; i < tasksRead; i++) {
-            if(i != 0) {
+
+    while ((tasksRead = fread(tarefa, sizeof(Tarefa), 10, fp)) != 0) {
+        for (int i = 0; i < tasksRead; i++) {
+            if (totalExibidas > 0) {
                 printf("%s\n", separator);
             }
+
             printf("Tarefa %d: %s\n", tarefa[i].id, tarefa[i].description);
-            switch(tarefa[i].status) {
+
+            switch (tarefa[i].status) {
                 case 'P':
                     printf("Status: Pendente\n");
                     break;
@@ -63,57 +99,54 @@ void listAllActions(FILE *fp) {
                     printf("Status: Desconhecido\n");
                     break;
             }
+
             printf("Data de Vencimento: %02d/%02d/%04d\n",
                    tarefa[i].expirationDay,
                    tarefa[i].expirationMonth,
                    tarefa[i].expirationYear);
-            
+
+            totalExibidas++;
         }
     }
-    system("pause");
+
+    fseek(fp, 0, SEEK_SET);
+    limparBuffer();
+   
 }
+
 
 void listNotDoneActions(FILE *fp) {
+    if (!fp) {
+        printf("Erro: arquivo não foi aberto corretamente.\n");
+        return;
+    }
+
     fseek(fp, 0, SEEK_SET);
 
-    int tasksRead = 0;
-    Tarefa tarefa[10];
-    while((tasksRead = fread(&tarefa, sizeof(Tarefa), 10, fp)) != 0) {
-        printf("Tarefas lidas: %d\n", tasksRead);
-        for(int i = 0; i < tasksRead; i++) {
-            if(tarefa[i].status == 'F') {
-                continue;
-            }
+    Tarefa t;
+    int total = 0;
 
-            if(i != 0) {
-                printf("%s\n", separator);
-            }
+    while (fread(&t, sizeof(Tarefa), 1, fp) == 1) {
+        if (t.status != 'P') continue;  // apenas pendentes
 
-            printf("Tarefa %d: %s\n", tarefa[i].id, tarefa[i].description);
-             switch(tarefa[i].status) {
-                case 'P':
-                    printf("Status: Pendente\n");
-                    break;
-                case 'F':
-                    printf("Status: Feito\n");
-                    break;
-                default:
-                    printf("Status: Desconhecido\n");
-                    break;
-            }
-            printf("Data de Vencimento: %02d/%02d/%04d\n",
-                   tarefa[i].expirationDay,
-                   tarefa[i].expirationMonth,
-                   tarefa[i].expirationYear);
-            
-        }
+        if (total > 0) printf("%s\n", separator);
+        printf("Tarefa %d: %s\n", t.id, t.description);
+        printf("Status: Pendente\n");
+        printf("Data de Vencimento: %02d/%02d/%04d\n",
+               t.expirationDay, t.expirationMonth, t.expirationYear);
+        total++;
     }
-    system("pause");
+
+    if (total == 0) printf("Nenhuma tarefa pendente encontrada.\n");
+
+    fseek(fp, 0, SEEK_SET); // deixa o ponteiro no início
 }
 
 
 
-void renderMenu(FILE *fp) {
+
+char renderMenu(FILE *fp) {
+    char buffer[10];
     char taskCountText[30];
     sprintf(taskCountText, "Existem %d tarefas.", getTaskCount(fp));
 
@@ -129,66 +162,78 @@ void renderMenu(FILE *fp) {
     printf("- %-30s -\n", "6) Excluir tarefa");
     printf("- %-30s -\n", "0) Sair");
     printf("%s\n", separator);
+    printf("Escolha uma opção: ");
+
+    if (fgets(buffer, sizeof(buffer), stdin) != NULL) {
+        return buffer[0];  // retorna apenas o primeiro caractere digitado
+    }
+    return '0';
 }
 
-int processAction(char action, FILE *fp) {
-    switch(action) {
-        case '1': 
-            listAllActions(fp);
-            break;
-        case '2': 
-            listNotDoneActions(fp);
-            break;
-        case '3': 
-            registerNewTask(fp);
-            break;
-        case '4': 
-            void modifyTaskState(FILE *fp);
-            break;
-        case '5': 
-            void updateTask(FILE *fp);
-            break;
-        case '6': 
-            removeTask(fp);
-            break;        
-        case '0': 
-            return -1;
-        default: 
-            printf("Ação selecionada inválida.\n");
-            break;
-    }
 
+
+/* Processador de ações */
+int processAction(char action, FILE **fp) {
+    switch (action) {
+
+        case '1': listAllActions(*fp); 
+        break;
+
+        case '2': listNotDoneActions(*fp); 
+        break;
+
+        case '3': registerNewTask(*fp); 
+        break;
+
+        case '4': modifyTaskState(fp); 
+        break;
+
+        case '5': updateTask(fp); 
+        break;
+
+        case '6': removeTask(fp); 
+        break;
+
+        case '0': return -1;
+        default: printf("Ação inválida.\n"); break;
+    }
     return 0;
 }
 
-void removeTask(FILE *fp) {
+/* Menu recursivo */
+void menuRecursivo(FILE **fp) {
+    char action = renderMenu(*fp);
+    int result = processAction(action, fp);
+
+    if (result != -1) {
+        menuRecursivo(fp); // chamada recursiva
+    } else {
+        printf("Encerrando o programa...\n");
+    }
+}
+
+
+void removeTask(FILE **fp) {
+    char buffer[50];
     int idRemover;
     int encontrada = 0;
     Tarefa tarefa;
-
     FILE *temp;
 
-    // pede o ID
     printf("Digite o ID da tarefa que deseja excluir: ");
-    scanf("%d", &idRemover);
-    getchar(); // limpa o buffer
+    fgets(buffer, sizeof(buffer), stdin);       // lê linha inteira
+    sscanf(buffer, "%d", &idRemover);           // converte para inteiro
 
-    // abre os arquivos
-    fp = fopen("tarefas.bin", "rb");
-    if (!fp) {
-        printf("Erro: não foi possível abrir o arquivo de tarefas.\n");
-        return;
-    }
+    fseek(*fp, 0, SEEK_SET);
 
     temp = fopen("temp.bin", "wb");
     if (!temp) {
-        printf("Erro: Falha na tentativa de exclusão. Verifique se há espaço em disco ou permissões de escrita.\n");
-        fclose(fp);
+        printf("Erro: falha ao criar arquivo temporário.\n");
         return;
     }
 
-    // lê cada tarefa e copia apenas as que não têm o ID a ser removido
-    while (fread(&tarefa, sizeof(Tarefa), 1, fp)) {
+    // Copia todas as tarefas, exceto a que será removida
+    while (fread(&tarefa, sizeof(Tarefa), 1, *fp) == 1) {
         if (tarefa.id != idRemover) {
             fwrite(&tarefa, sizeof(Tarefa), 1, temp);
         } else {
@@ -196,140 +241,138 @@ void removeTask(FILE *fp) {
         }
     }
 
-    fclose(fp);
+    fclose(*fp);
     fclose(temp);
 
-    // Proteção contra perda de dados:
-
-    // remove backup antigo (caso exista) e cria um novo
-    remove("backup.bin"); 
-
-    // 1. renomeia o arquivo original para backup
+    // Backup e substituição
+    remove("backup.bin");
     if (rename("tarefas.bin", "backup.bin") != 0) {
         printf("Erro ao criar backup do arquivo original.\n");
         remove("temp.bin");
         return;
     }
 
-    // 2. renomeia o temporário para o nome do original
     if (rename("temp.bin", "tarefas.bin") != 0) {
-        printf("Erro ao remover tarefa.\n");
-        // tenta restaurar o backup
+        printf("Erro ao substituir arquivo original.\n");
         rename("backup.bin", "tarefas.bin");
         remove("temp.bin");
         return;
     }
 
-    // 3. Se tudo deu certo → remove o backup
     remove("backup.bin");
 
     if (encontrada)
         printf("Tarefa %d removida com sucesso!\n", idRemover);
     else
         printf("Tarefa não encontrada.\n");
+
+    
+
+    // 🔄 Reabre o arquivo atualizado e atualiza o ponteiro principal
+    *fp = fopen("tarefas.bin", "r+b");
+    if (!*fp) {
+        printf("Erro ao reabrir o arquivo após exclusão.\n");
+        return;
+    }
 }
 
 
-void modifyTaskState(FILE *fp) {
+
+
+void modifyTaskState(FILE **fp) {
+    char buffer[50];
     int idAlvo;
     char novoEstado;
     int encontrada = 0;
     Tarefa tarefa;
-
     FILE *temp;
 
-    printf("Digite o id da Tarefa que deseja alterar o Estado: ");
-    scanf("%d", &idAlvo);
-    getchar();
+    printf("Digite o ID da tarefa que deseja alterar o estado: ");
+    fgets(buffer, sizeof(buffer), stdin);
+    sscanf(buffer, "%d", &idAlvo);
 
-    printf("Digite o novo Estado ('F' para feito, 'P' para pendente): \n");
-    scanf("%c", &novoEstado);
+    printf("Digite o novo estado ('F' para feito, 'P' para pendente): ");
+    fgets(buffer, sizeof(buffer), stdin);
+    sscanf(buffer, " %c", &novoEstado);
 
-    //abre os dois arquivos original e temp
+    // Garante leitura desde o início
+    fseek(*fp, 0, SEEK_SET);
 
-    fp = fopen("tarefas.bin" , "rb");
-    if(fp == NULL){
-        printf("ERRO: não foi possivel abrir o arquivo de tarefas\n");
-        return;
-    }
-
+    // Abre arquivo temporário
     temp = fopen("temp.bin", "wb");
-    if(temp == NULL){
-        printf("Erro: não foi possível modificar estado da tarefa.\n");
-        fclose(fp);
+    if (!temp) {
+        printf("Erro: não foi possível criar arquivo temporário.\n");
         return;
     }
-    //procura a tarefa cujo estado deve ser modificado
-    while(fread(&tarefa, sizeof(Tarefa), 1, fp)){
-        if(tarefa.id == idAlvo){
+
+    // Lê todas as tarefas e atualiza a desejada
+    while (fread(&tarefa, sizeof(Tarefa), 1, *fp) == 1) {
+        if (tarefa.id == idAlvo) {
             tarefa.status = novoEstado;
             encontrada = 1;
         }
-    // Copia todas as tarefas para o arquivo temporário, atualizando a que teve o estado alterado
-        fwrite(&tarefa, sizeof(Tarefa), 1,temp);
+        fwrite(&tarefa, sizeof(Tarefa), 1, temp);
     }
-    fclose(fp);
+
+    fclose(*fp);
     fclose(temp);
 
-    // Proteção contra perda de dados:
-
-    // remove backup antigo (caso exista) e cria um novo
-    remove("backup.bin"); 
-
-    // 1. renomeia o arquivo original para backup
+    // Proteção contra perda de dados
+    remove("backup.bin");
     if (rename("tarefas.bin", "backup.bin") != 0) {
         printf("Erro ao criar backup do arquivo original.\n");
         remove("temp.bin");
         return;
     }
 
-    // 2. renomeia o temporário para o nome do original
     if (rename("temp.bin", "tarefas.bin") != 0) {
         printf("Erro ao modificar o estado da tarefa.\n");
-        // tenta restaurar o backup
-        rename("backup.bin", "tarefas.bin");
+        rename("backup.bin", "tarefas.bin"); // restaura backup
         remove("temp.bin");
         return;
     }
 
-    // 3. Se tudo deu certo → remove o backup
     remove("backup.bin");
 
     if (encontrada)
-        printf("Estado da Tarefa %d alterado com sucesso!\n", idAlvo);
+        printf("Estado da tarefa %d alterado com sucesso!\n", idAlvo);
     else
         printf("Tarefa não encontrada.\n");
+
+    
+
+    // Reabre o arquivo atualizado e atualiza o ponteiro no main
+    *fp = fopen("tarefas.bin", "r+b");
+    if (!*fp) {
+        printf("Erro ao reabrir arquivo após alteração.\n");
+        return;
+    }
 }
 
 
-void updateTask(FILE *fp) {
+
+void updateTask(FILE **fp) {
+    char buffer[100];
     int idAlvo;
     int encontrada = 0;
     Tarefa tarefa;
     FILE *temp;
 
     printf("Digite o ID da tarefa que deseja atualizar: ");
-    scanf("%d", &idAlvo);
-    getchar(); // limpa o buffer
+    fgets(buffer, sizeof(buffer), stdin);
+    sscanf(buffer, "%d", &idAlvo);
 
-    // abre arquivos
-    fp = fopen("tarefas.bin", "rb");
-    if (fp == NULL) {
-        printf("Erro: não foi possível abrir o arquivo de tarefas.\n");
-        return;
-    }
-
+    fseek(*fp, 0, SEEK_SET); // começa do início
     temp = fopen("temp.bin", "wb");
-    if (temp == NULL) {
-        printf("Erro: não foi possível Atualizar tarefa\n");
-        fclose(fp);
+    if (!temp) {
+        printf("Erro: não foi possível criar arquivo temporário.\n");
         return;
     }
 
-    // percorre todas as tarefas
-    while (fread(&tarefa, sizeof(Tarefa), 1, fp)) {
+    while (fread(&tarefa, sizeof(Tarefa), 1, *fp) == 1) {
         if (tarefa.id == idAlvo) {
             encontrada = 1;
+
             printf("\nTarefa encontrada!\n");
             printf("Descrição atual: %s\n", tarefa.description);
             printf("Status atual: %c\n", tarefa.status);
@@ -346,21 +389,22 @@ void updateTask(FILE *fp) {
                 printf("3) Data de vencimento\n");
                 printf("0) Finalizar alterações\n");
                 printf("Escolha: ");
-                scanf("%d", &opcao);
-                getchar();
+                fgets(buffer, sizeof(buffer), stdin);
+                sscanf(buffer, "%d", &opcao);
 
                 switch (opcao) {
                     case 1:
                         printf("Nova descrição: ");
                         fgets(tarefa.description, sizeof(tarefa.description), stdin);
-                        tarefa.description[strcspn(tarefa.description, "\n")] = 0;
+                        tarefa.description[strcspn(tarefa.description, "\n")] = '\0';
                         break;
 
                     case 2:
                         do {
                             printf("Novo status ('F' - Feita, 'P' - Pendente): ");
-                            scanf(" %c", &tarefa.status);
-                            getchar();
+                            fgets(buffer, sizeof(buffer), stdin);
+                            sscanf(buffer, " %c", &tarefa.status);
+
                             if (tarefa.status != 'F' && tarefa.status != 'P')
                                 printf("Status inválido! Use apenas 'F' ou 'P'.\n");
                         } while (tarefa.status != 'F' && tarefa.status != 'P');
@@ -368,8 +412,11 @@ void updateTask(FILE *fp) {
 
                     case 3:
                         printf("Nova data de vencimento (dd mm aaaa): ");
-                        scanf("%d %d %d", &tarefa.expirationDay, &tarefa.expirationMonth, &tarefa.expirationYear);
-                        getchar();
+                        fgets(buffer, sizeof(buffer), stdin);
+                        sscanf(buffer, "%d %d %d",
+                               &tarefa.expirationDay,
+                               &tarefa.expirationMonth,
+                               &tarefa.expirationYear);
                         break;
 
                     case 0:
@@ -386,13 +433,11 @@ void updateTask(FILE *fp) {
         fwrite(&tarefa, sizeof(Tarefa), 1, temp);
     }
 
-    fclose(fp);
+    fclose(*fp);
     fclose(temp);
 
-    // Proteção contra perda de dados
-
-     // remove backup antigo (caso exista) e cria um novo
-    remove("backup.bin"); 
+    // Backup e substituição segura
+    remove("backup.bin");
 
     if (rename("tarefas.bin", "backup.bin") != 0) {
         printf("Erro ao criar backup do arquivo original.\n");
@@ -413,6 +458,15 @@ void updateTask(FILE *fp) {
         printf("\nTarefa %d atualizada com sucesso!\n", idAlvo);
     else
         printf("\nTarefa não encontrada.\n");
+
+    
+
+    // Reabre o arquivo atualizado para o programa continuar
+    *fp = fopen("tarefas.bin", "r+b");
+    if (!*fp) {
+        printf("Erro ao reabrir o arquivo após atualização.\n");
+        return;
+    }
 }
 
 

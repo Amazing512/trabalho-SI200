@@ -1,30 +1,36 @@
-#ifndef TAREFAS_H
-#define TAREFAS_H
+#ifndef TAREFA_H
+#define TAREFA_H
+
 #include <stdio.h>
 
-typedef struct tarefa {
-  int id;
-  char status; // 'F' para feito, 'P' para pendente
-  char description[100];
-  int expirationDay;
-  int expirationMonth;
-  int expirationYear;
+/* Estrutura da tarefa */
+typedef struct {
+    int id;
+    char description[100];
+    char status; // 'P' = pendente, 'F' = feito
+    int expirationDay;
+    int expirationMonth;
+    int expirationYear;
 } Tarefa;
 
-void renderMenu(FILE *fp);
+/* Funções utilitárias */
+void limparBuffer();
 
-int processAction(char action, FILE *fp);
 
+/* Funções principais */
+int getTaskCount(FILE *fp);
+void registerNewTask(FILE *fp);
 void listAllActions(FILE *fp);
-
 void listNotDoneActions(FILE *fp);
 
-void registerNewTask(FILE *fp);
+/* Funções que modificam o arquivo (usam FILE **) */
+void modifyTaskState(FILE **fp);
+void updateTask(FILE **fp);
+void removeTask(FILE **fp);
 
-void removeTask(FILE *fp);
-
-void modifyTaskState(FILE *fp);
-
-void updateTask(FILE *fp);
+/* Funções de menu */
+char renderMenu(FILE *fp);
+int processAction(char action, FILE **fp);
+void menuRecursivo(FILE **fp);
 
 #endif
