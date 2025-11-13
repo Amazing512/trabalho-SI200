@@ -11,13 +11,7 @@ int main() {
         return 1;
     }
 
-    while (1) {
-        char action = renderMenu(fp);
-
-        if (processAction(action, &fp) == -1) {
-            break;
-        }
-    }
+    menuRecursivo(fp);
 
     fclose(fp);
     return 0;

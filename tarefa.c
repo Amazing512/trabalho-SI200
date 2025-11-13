@@ -140,6 +140,8 @@ void listNotDoneActions(FILE *fp) {
     if (total == 0) printf("Nenhuma tarefa pendente encontrada.\n");
 
     fseek(fp, 0, SEEK_SET); // deixa o ponteiro no início
+
+    limparBuffer();
 }
 
 
@@ -201,9 +203,9 @@ int processAction(char action, FILE **fp) {
 }
 
 /* Menu recursivo */
-void menuRecursivo(FILE **fp) {
-    char action = renderMenu(*fp);
-    int result = processAction(action, fp);
+void menuRecursivo(FILE *fp) {
+    char action = renderMenu(fp);
+    int result = processAction(action, &fp);
 
     if (result != -1) {
         menuRecursivo(fp); // chamada recursiva

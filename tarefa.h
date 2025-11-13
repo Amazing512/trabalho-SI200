@@ -31,6 +31,6 @@ void removeTask(FILE **fp);
 /* Funções de menu */
 char renderMenu(FILE *fp);
 int processAction(char action, FILE **fp);
-void menuRecursivo(FILE **fp);
+void menuRecursivo(FILE *fp);
 
 #endif
