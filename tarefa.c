@@ -31,6 +31,28 @@ int getTaskCount(FILE *fp) {
     return count;
 }
 
+int getPendingTaskCount(FILE *fp) {
+    if (fp == NULL) {
+        printf("Erro: arquivo não foi aberto corretamente.\n");
+        return 0;
+    }
+
+    fseek(fp, 0, SEEK_SET);
+
+    int count = 0;
+    Tarefa tarefa;
+
+    while (fread(&tarefa, sizeof(Tarefa), 1, fp) == 1) {
+        if (tarefa.status == 'P') {
+            count++;
+        }
+    }
+
+    fseek(fp, 0, SEEK_SET); // reposiciona o ponteiro
+
+    return count;
+}
+
 
 void registerNewTask(FILE *fp) {
     if (fp == NULL) {
@@ -120,24 +142,36 @@ void listNotDoneActions(FILE *fp) {
         printf("Erro: arquivo não foi aberto corretamente.\n");
         return;
     }
+    
+    int count = getPendingTaskCount(fp);
+    
+    if (count == 0) {
+        printf("Nenhuma tarefa pendente encontrada.\n");
+        return;
+    }
 
     fseek(fp, 0, SEEK_SET);
 
     Tarefa t;
-    int total = 0;
 
+    Tarefa *tarefas = (Tarefa*) malloc(sizeof(Tarefa) * count);
+
+    int indexer = 0;
     while (fread(&t, sizeof(Tarefa), 1, fp) == 1) {
         if (t.status != 'P') continue;  // apenas pendentes
 
-        if (total > 0) printf("%s\n", separator);
-        printf("Tarefa %d: %s\n", t.id, t.description);
-        printf("Status: Pendente\n");
-        printf("Data de Vencimento: %02d/%02d/%04d\n",
-               t.expirationDay, t.expirationMonth, t.expirationYear);
-        total++;
+        tarefas[indexer] = t;
+        indexer++;
     }
 
-    if (total == 0) printf("Nenhuma tarefa pendente encontrada.\n");
+    for(int i = 0; i < count; i++) {
+        if (i > 0) printf("%s\n", separator);
+        printf("Tarefa %d: %s\n", tarefas[i].id, tarefas[i].description);
+        printf("Status: Pendente\n");
+        printf("Data de Vencimento: %02d/%02d/%04d\n",
+               tarefas[i].expirationDay, tarefas[i].expirationMonth, tarefas[i].expirationYear);
+    }
+
 
     fseek(fp, 0, SEEK_SET); // deixa o ponteiro no início
 

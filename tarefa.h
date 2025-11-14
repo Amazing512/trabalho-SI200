@@ -19,6 +19,7 @@ void limparBuffer();
 
 /* Funções principais */
 int getTaskCount(FILE *fp);
+int getPendingTaskCount(FILE *fp);
 void registerNewTask(FILE *fp);
 void listAllActions(FILE *fp);
 void listNotDoneActions(FILE *fp);
