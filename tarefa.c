@@ -172,6 +172,7 @@ void listNotDoneActions(FILE *fp) {
                tarefas[i].expirationDay, tarefas[i].expirationMonth, tarefas[i].expirationYear);
     }
 
+    free(tarefas);
 
     fseek(fp, 0, SEEK_SET); // deixa o ponteiro no início
 
